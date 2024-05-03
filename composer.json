@@ -1,6 +1,6 @@
 {
     "name": "gustocoder/laravel-datatable",
-    "description": "Datatable with sorting, CRUD features & pagination for Laravel 11.0",
+    "description": "Laravel datatable package that provides sorting, allows you to optionally add an extra column, under which you can add buttons for CRUD operations. The button creation method will automatically generate links and send the individual record id to the route name you pass to it. You can configure whether you want the records to be clickable, sortable or not. There is also pagination. Built using Laravel 11.0 but will work on most recent versions. It uses Bootstrap 5 to wrap your responsive table in a nice customizable panel",
     "type": "library",
     "license": "MIT",
     "autoload": {
@@ -20,6 +20,7 @@
             "name": "Gustav Ndamukong"
         }
     ],
-    "minimum-stability": "dev",
-    "require": {}
+    "minimum-stability": "stable",
+    "require": {},
+    "version": "1.0.0"
 }
