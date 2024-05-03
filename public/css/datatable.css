@@ -1,0 +1,31 @@
+
+:root {
+    --primary: #2124B1;
+    --secondary: #4777F5;
+    --light: #F7FAFF;
+    --dark: #1D1D27;
+}
+
+#datatablePanel {
+    border: solid 0.2px grey;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+#datatablePanel .panel-heading { 
+    background-color: var(--secondary);
+    padding: 2em;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    margin: 0px -14px 0px -14px;
+}
+
+#datatablePanel .panel-heading .panel-title { 
+    text-align: center;
+    color: #fff;
+}
+
+#datatablePanel .panel-body table thead {
+    color: #000;
+    height: 2rem !important;
+}

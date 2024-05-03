@@ -1,0 +1,25 @@
+{
+    "name": "gustocoder/laravel-datatable",
+    "description": "Datatable with sorting, CRUD features & pagination for Laravel 11.0",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Gustocoder\\LaravelDatatable\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Gustocoder\\LaravelDatatable\\LaravelDatatableServiceProvider"
+            ]
+        }
+    },
+    "authors": [
+        {
+            "name": "Gustav Ndamukong"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
