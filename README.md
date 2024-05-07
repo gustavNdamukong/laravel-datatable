@@ -2,7 +2,7 @@
 
 ## Instantly generate a beautiful tables from your model data
 
-![Create a category](https://github.com/gustavNdamukong/Gustocoder/laravel-datatable/blob/master/laravel-datatable.jpg?raw=true)
+![Create a category](https://github.com/gustavNdamukong/laravel-datatable/blob/master/laravel-datatable.jpg?raw=true)
 
 ## How to use it
 
@@ -24,80 +24,79 @@
 ## The main class here is DatatableController
 
 ## Use it
+```php 
+    namespace GustoCoder\LaravelDatatable\Http\Controllers;
 
-    ```php 
-        namespace GustoCoder\LaravelDatatable\Http\Controllers;
-
-        use App\Http\Controllers\Controller;
-        use Gustocoder\LaravelDatatable\Http\Controllers\DatatableController;
+    use App\Http\Controllers\Controller;
+    use Gustocoder\LaravelDatatable\Http\Controllers\DatatableController;
 
 
-        class ExampleController extends Controller
+    class ExampleController extends Controller
+    {
+        public function showUsers() {
+            $dataTableClass = new DatatableController('User', 'users', [], ['date_field' => 'created_at', 'orderBy' => 'created_at']);
+
+            //give the full route path (NOT the route name) as defined in the route file, eg 'admin/users'
+            $deleteRoute = 'deleteUser'; 
+            $editRoute = 'editUsers'; 
+
+
+            //This is optional, & it creates a new column, eg 'Actions'. It accepts the name of the column 
+            //and you can call it whatever you want. It only supports adding one column, so only call this once.
+            //You can however, add multiple field buttons under that columns, and the column will be expanded 
+            //to contain them all  
+            // eg Actions.
+            //If you do call addColumn, make sure you also call addFieldButton(...) to insert data under the new column
+            $dataTableClass->addColumn('Action');
+
+            //used to add field data to go under the column you added above. Use this for Edit, or Delete buttons.
+            $dataTableClass->addFieldButton('Action', 'Delete', 'x', $deleteRoute, ['id'], ['id' => 'deleteUserBtn', 'class' => 'btn 
+                btn-danger btn-sm']);
+
+            $dataTableClass->addFieldButton('Action', 'Edit', 'Edit', $editRoute, ['id'], ['id' => 'editUserBtn', 'class' => 'btn           
+                btn-warning btn-sm']);
+
+            //add another button if you want. Give it relevant attributes
+            $dataTableClass->addFieldButton('Action', 'Something', 'something', 'someRoute', ['id'], ['id' => 'doSomethingBtn', 'class' => 
+                'btn btn-primary btn-sm']);
+
+            //override the panel id value-the current/default value is 'datatablePanel'. After setting the id, do not 
+            //forget to edit your panel styling in public/vendor/laravel-datatable/css/datatable.css - go in there & edit the styling 
+            //for 'datatablePanel'. The reason for allowing you to set an id attribute on the panel that wraps around the table is
+            //to allow you use CSS and, or JS to customise the look and behaviour of the table.
+            //If you do assign a panelId, do not forget to go into the CSS stylesheet in your public directory and change the panelId 
+            //from the default one 'datatablePanel' to the one you have added.
+
+            //Also, do not forget to reference datatable stylesheet from the path where it lives 'vendor/laravel-datatable/css/datatable.css' 
+            //from your layout file like so:
+
+            //     <link href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" rel="stylesheet">
+            $panelId = 'usersPanel';
+            $usersTable = $dataTableClass->getTable($panelId);
+            return view('laravel-datatable::datatable-view', ['usersTable' => $usersTable]);
+        }
+
+
+        /**
+         * An example of how you would delete a record from the datatable-see the delete
+         * button link and the route that points to this method
+        */
+        public function deleteUser($userId)
         {
-            public function showUsers() {
-                $dataTableClass = new DatatableController('User', 'users', [], ['date_field' => 'created_at', 'orderBy' => 'created_at']);
+            $userModel = new User();
+            $record = $userModel::find($userId);
 
-                //give the full route path (NOT the route name) as defined in the route file, eg 'admin/users'
-                $deleteRoute = 'deleteUser'; 
-                $editRoute = 'editUsers'; 
-
-
-                //This is optional, & it creates a new column, eg 'Actions'. It accepts the name of the column 
-                //and you can call it whatever you want. It only supports adding one column, so only call this once.
-                //You can however, add multiple field buttons under that columns, and the column will be expanded 
-                //to contain them all  
-                // eg Actions.
-                //If you do call addColumn, make sure you also call addFieldButton(...) to insert data under the new column
-                $dataTableClass->addColumn('Action');
-
-                //used to add field data to go under the column you added above. Use this for Edit, or Delete buttons.
-                $dataTableClass->addFieldButton('Action', 'Delete', 'x', $deleteRoute, ['id'], ['id' => 'deleteUserBtn', 'class' => 'btn 
-                    btn-danger btn-sm']);
-
-                $dataTableClass->addFieldButton('Action', 'Edit', 'Edit', $editRoute, ['id'], ['id' => 'editUserBtn', 'class' => 'btn           
-                    btn-warning btn-sm']);
-
-                //add another button if you want. Give it relevant attributes
-                $dataTableClass->addFieldButton('Action', 'Something', 'something', 'someRoute', ['id'], ['id' => 'doSomethingBtn', 'class' => 
-                    'btn btn-primary btn-sm']);
-
-                //override the panel id value-the current/default value is 'datatablePanel'. After setting the id, do not 
-                //forget to edit your panel styling in public/vendor/laravel-datatable/css/datatable.css - go in there & edit the styling 
-                //for 'datatablePanel'. The reason for allowing you to set an id attribute on the panel that wraps around the table is
-                //to allow you use CSS and, or JS to customise the look and behaviour of the table.
-                //If you do assign a panelId, do not forget to go into the CSS stylesheet in your public directory and change the panelId 
-                //from the default one 'datatablePanel' to the one you have added.
-
-                //Also, do not forget to reference datatable stylesheet from the path where it lives 'vendor/laravel-datatable/css/datatable.css' 
-                //from your layout file like so:
-
-                //     <link href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" rel="stylesheet">
-                $panelId = 'usersPanel';
-                $usersTable = $dataTableClass->getTable($panelId);
-                return view('laravel-datatable::datatable-view', ['usersTable' => $usersTable]);
+            if ($record) {
+                $record->delete();
+                return redirect()->back()->with('success', 'User deleted successfully');
             }
-
-
-            /**
-             * An example of how you would delete a record from the datatable-see the delete
-             * button link and the route that points to this method
-            */
-            public function deleteUser($userId)
+            else 
             {
-                $userModel = new User();
-                $record = $userModel::find($userId);
-
-                if ($record) {
-                    $record->delete();
-                    return redirect()->back()->with('success', 'User deleted successfully');
-                }
-                else 
-                {
-                    return redirect()->back()->with('danger', 'User could not be deleted');
-                }
+                return redirect()->back()->with('danger', 'User could not be deleted');
             }
         }
-    ```
+    }
+```
 
     You would display the generated table-in the above example 'usersTable' in the view blade file like so:
 
