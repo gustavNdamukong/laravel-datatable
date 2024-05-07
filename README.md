@@ -34,7 +34,12 @@
     class ExampleController extends Controller
     {
         public function showUsers() {
-            $dataTableClass = new DatatableController('User', 'users', [], ['date_field' => 'created_at', 'orderBy' => 'created_at']);
+            $dataTableClass = new DatatableController(
+                'User', 
+                'users', 
+                [], 
+                ['date_field' => 'created_at', 'orderBy' => 'created_at']
+            );
 
             //give the full route path (NOT the route name) as defined in the route file, eg 'admin/users'
             $deleteRoute = 'deleteUser'; 
@@ -42,33 +47,52 @@
 
 
             //This is optional, & it creates a new column, eg 'Actions'. It accepts the name of the column 
-            //and you can call it whatever you want. It only supports adding one column, so only call this once.
-            //You can however, add multiple field buttons under that columns, and the column will be expanded 
-            //to contain them all  
-            // eg Actions.
-            //If you do call addColumn, make sure you also call addFieldButton(...) to insert data under the new column
+            //and you can call it whatever you want. It only supports adding one column, so only call this 
+            //once. You can however, add multiple field buttons under that columns, and the column will be 
+            //expanded to contain them all eg Actions.
+            //If you do call addColumn, make sure you also call addFieldButton(...) to insert data under 
+            //the new column
             $dataTableClass->addColumn('Action');
 
-            //used to add field data to go under the column you added above. Use this for Edit, or Delete buttons.
-            $dataTableClass->addFieldButton('Action', 'Delete', 'x', $deleteRoute, ['id'], ['id' => 'deleteUserBtn', 'class' => 'btn 
-                btn-danger btn-sm']);
+            //used to add field data to go under the column you added above. Handy for Edit, or Delete buttons.
+            $dataTableClass->addFieldButton(
+                'Action', 
+                'Delete', 
+                'x', 
+                $deleteRoute, 
+                ['id'], 
+                ['id' => 'deleteUserBtn', 'class' => 'btn btn-danger btn-sm']
+            );
 
-            $dataTableClass->addFieldButton('Action', 'Edit', 'Edit', $editRoute, ['id'], ['id' => 'editUserBtn', 'class' => 'btn           
-                btn-warning btn-sm']);
+            $dataTableClass->addFieldButton(
+                'Action', 
+                'Edit', 
+                'Edit', 
+                $editRoute, 
+                ['id'], 
+                ['id' => 'editUserBtn', 'class' => 'btn btn-warning btn-sm']
+            );
 
             //add another button if you want. Give it relevant attributes
-            $dataTableClass->addFieldButton('Action', 'Something', 'something', 'someRoute', ['id'], ['id' => 'doSomethingBtn', 'class' => 
-                'btn btn-primary btn-sm']);
+            $dataTableClass->addFieldButton(
+                'Action', 
+                'Something', 
+                'something', 
+                'someRoute', 
+                ['id'], 
+                ['id' => 'doSomethingBtn', 'class' => 'btn btn-primary btn-sm']
+            );
 
-            //override the panel id value-the current/default value is 'datatablePanel'. After setting the id, do not 
-            //forget to edit your panel styling in public/vendor/laravel-datatable/css/datatable.css - go in there & edit the styling 
-            //for 'datatablePanel'. The reason for allowing you to set an id attribute on the panel that wraps around the table is
-            //to allow you use CSS and, or JS to customise the look and behaviour of the table.
-            //If you do assign a panelId, do not forget to go into the CSS stylesheet in your public directory and change the panelId 
-            //from the default one 'datatablePanel' to the one you have added.
+            //override the panel id value-the current/default value is 'datatablePanel'. After setting the 
+            //id, do not forget to edit your panel styling in public/vendor/laravel-datatable/css/datatable.css 
+            //- go in there & edit the styling for 'datatablePanel'. The reason for allowing you to set an id 
+            //attribute on the panel that wraps around the table is to allow you use CSS and, or JS to customise 
+            //the look and behaviour of the table. If you do assign a panelId, do not forget to go into the CSS 
+            //stylesheet in your public directory and change the panelId from the default one 'datatablePanel' 
+            //to the one you have added.
 
-            //Also, do not forget to reference datatable stylesheet from the path where it lives 'vendor/laravel-datatable/css/datatable.css' 
-            //from your layout file like so:
+            //Also, do not forget to reference datatable stylesheet from the path where it lives 
+            //'vendor/laravel-datatable/css/datatable.css' from your layout file like so:
 
             //     <link href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" rel="stylesheet">
             $panelId = 'usersPanel';
@@ -185,8 +209,13 @@
         ...
         $deleteRoute = 'deleteUser';
         ...
-        $dataTableClass->addFieldButton('Action', 'Delete', 'x', $deleteRoute, ['id'], ['id' => 'deleteUserBtn', 'class' => 'btn btn-danger 
-            btn-sm']);
+        $dataTableClass->addFieldButton(
+            'Action', 
+            'Delete', 
+            'x', 
+            $deleteRoute, 
+            ['id'], 
+            ['id' => 'deleteUserBtn', 'class' => 'btn btn-danger btn-sm']);
     ```
 
 * The delete button that the getTable() method of DatatableController will create will have an anchor link pointing to 
