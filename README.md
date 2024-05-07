@@ -279,9 +279,9 @@
         php artisan vendor:publish
     ```
 
-    Finally, make sure that the LaravelDatatableServiceProvider class is registered 
+    Finally, make sure that the <span style="color:red;font-weight:bold;">LaravelDatatableServiceProvider</span> class is registered 
     in your
-        /bootstrap/providers.php file like so:
+        <span style="color:red;font-weight:bold;">/bootstrap/providers.php</span> file like so:
 
     ```php
         return [
