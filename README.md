@@ -2,7 +2,7 @@
 
 ## Instantly generate a beautiful tables from your model data
 
-![Create a category](https://github.com/gustavNdamukong/Gustocoder/laravel-datatable/blob/main/laravel-datatable.jpg?raw=true)
+![Create a category](https://github.com/gustavNdamukong/Gustocoder/laravel-datatable/blob/master/laravel-datatable.jpg?raw=true)
 
 ## How to use it
 
