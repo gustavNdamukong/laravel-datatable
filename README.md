@@ -7,7 +7,7 @@
 ## How to use it
 
 ### Install it
-    composer install gustocoder/laravel-datatable
+    composer require gustocoder/laravel-datatable:^1.0
 
  After installation
  The configuration file will be created for you in: 
