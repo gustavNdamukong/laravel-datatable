@@ -7,7 +7,7 @@
 ## How to use it
 
 ### Install it
-    ```php 
+    ```bash 
         composer require gustocoder/laravel-datatable
     ```
 
@@ -274,7 +274,7 @@
 
     Then you need to run this command to fix that:
 
-    ```php
+    ```bash
         php artisan vendor:publish
     ```
 
