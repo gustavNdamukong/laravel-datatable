@@ -83,13 +83,14 @@
                 ['id' => 'doSomethingBtn', 'class' => 'btn btn-primary btn-sm']
             );
 
-            //override the panel id value-the current/default value is 'datatablePanel'. After setting the 
-            //id, do not forget to edit your panel styling in public/vendor/laravel-datatable/css/datatable.css 
-            //- go in there & edit the styling for 'datatablePanel'. The reason for allowing you to set an id 
-            //attribute on the panel that wraps around the table is to allow you use CSS and, or JS to customise 
-            //the look and behaviour of the table. If you do assign a panelId, do not forget to go into the CSS 
-            //stylesheet in your public directory and change the panelId from the default one 'datatablePanel' 
-            //to the one you have added.
+            /*override the panel id value-the current/default value is 'datatablePanel'. After 
+            setting the id, do not forget to edit your panel styling in 
+            public/vendor/laravel-datatable/css/datatable.css - go in there & edit the styling 
+            for 'datatablePanel'. The reason for allowing you to set an id attribute on the panel 
+            that wraps around the table is to allow you use CSS and, or JS to customise the look 
+            and behaviour of the table. If you do assign a panelId, do not forget to go into the 
+            CSS stylesheet in your public directory and change the panelId from the default one 
+            'datatablePanel' to the one you have added.*/
 
             
             $panelId = 'usersPanel';
@@ -129,19 +130,19 @@
 
 * The first argument here (required) must be the exact spelling of the model to use.
 
-* The second argument (optional) is the route path you have defined in your route file for the view 
-    file where the fetched data from the model will be displayed. It is optional because you may 
-    choose to have the records not clickable and, or, not sortable-in which case there will be no 
-    anchor links generated or fetch more data.
+* The second argument (optional) is the route path you have defined in your route file for the 
+    view file where the fetched data from the model will be displayed. It is optional because you 
+    may choose to have the records not clickable and, or, not sortable-in which case there will 
+    be no anchor links generated or fetch more data.
 
-* The third argument (optional) is an associative array of specific fields you want to fetch if you 
-    do not want to fetch all fields on the model. The keys are the actual DB table field names, 
+* The third argument (optional) is an associative array of specific fields you want to fetch if 
+    you do not want to fetch all fields on the model. The keys are the actual DB table field names, 
     while the values which are optional, are strings you want to appear on the generated table as 
     aliases in place of the table field name. 
 
-* The fourth argument (optional) is an array of configuration that you want to override the the base 
-    config settings for the current table you are creating. You pass in an associative array of 
-    config settings and their values. For example:
+* The fourth argument (optional) is an array of configuration that you want to override the the 
+    base config settings for the current table you are creating. You pass in an associative array 
+    of config settings and their values. For example:
 
     ```php
         ['date_field' => 'created_at', 'orderBy' => 'created_at']
@@ -228,10 +229,14 @@
 ## Customising the look of your table
 
     It is up to you to style the generated table as you wish.
-    The table is wrapped in a panel with the id of: 'datatablePanel' or any id you specified for it when 
-    you called getTable($panelId)
-    The table element itself also has an id generated from the model name like so id='modelname_table'
-    You may use the panelId and table id attributes to customise the styling of the table.
+    The table is wrapped in a panel with the id of: 'datatablePanel' or any id you 
+    specified for it when you called getTable($panelId)
+
+    The table element itself also has an id generated from the model name like so 
+    id='modelname_table'
+
+    You may use the panelId and table id attributes to customise the styling of the 
+    table.
 
 * So, remember to reference datatable stylesheet from the path where it lives 
      (in 'vendor/laravel-datatable/css/datatable.css') into your layout file like so:
