@@ -1,6 +1,6 @@
 # Laravel datatable package
 
-## Instantly generate a beautiful tables from your model data
+## Instantly generate beautiful tables from your Laravel models
 
 ![Example Users table](https://github.com/gustavNdamukong/laravel-datatable/blob/master/public/images/laravel-datatable.jpg?raw=true)
 
