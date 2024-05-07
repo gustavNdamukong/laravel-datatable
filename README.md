@@ -7,7 +7,9 @@
 ## How to use it
 
 ### Install it
-    composer require gustocoder/laravel-datatable:^1.0
+    ```php 
+        composer require gustocoder/laravel-datatable
+    ```
 
  After installation
  The configuration file will be created for you in: 
@@ -252,4 +254,37 @@
         <link 
             href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" 
             rel="stylesheet">
+    ```
+
+* Remember that to style the table, you need to edit the CSS file in 
+    'public/vendor/laravel-datatable/css/datatable.css'
+
+  The CSS selectors currently point to the default panelId value which is 
+  'datatablePanel'. If you passed in a panelId to 'getTable()' when you called it; 
+  you need to go into the CSS file 
+  ('public/vendor/laravel-datatable/css/datatable.css') and change the CSS selector 
+  references from 'datatablePanel' to the value of the panelid you passed in to 
+  getTable().
+
+* Once more, if you cannot find the following files in your project after installing 
+    the package:
+
+    * /config/laravel-datatable.php 
+    * /vendor/laravel-datatable/css/datatable.css
+
+    Then you need to run this command to fix that:
+
+    ```php
+        php artisan vendor:publish
+    ```
+
+    Finally, make sure that the LaravelDatatableServiceProvider class is registered 
+    in your
+        /bootstrap/providers.php file like so:
+
+    ```php
+        return [
+            ...
+            Gustocoder\laravelDatatable\LaravelDatatableServiceProvider::class
+        ];
     ```
