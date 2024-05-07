@@ -171,7 +171,7 @@
             ['orderBy' => 'created_at'] 
         ```
         
-    * Optionally, if you can set the heading for your table in this same config 4th argument like so:
+    * Optionally, you can set the heading for your table in this same config 4th argument like so:
 
         ```php
             ['heading' => 'Users data']
@@ -186,7 +186,8 @@
      with these links. All you then have to do create the routes to match those paths.
 
     -Also, when you add buttons, the system will add anchor links to them, adding in the record 
-     ids as well. Here is an example of how you would create a route to handle deletion of a record:
+     ids as well. Here is an example of how you would create a route to handle deletion of a 
+     record:
 
 
 * routes\web.php
@@ -220,10 +221,10 @@
             ['id' => 'deleteUserBtn', 'class' => 'btn btn-danger btn-sm']);
     ```
 
-* The delete button that the getTable() method of DatatableController will create will have an anchor 
-    link pointing to '/deleteUser/6' where 6 is the record id against that specific delete button. The 
-    defined deleteUser route above will take the request to the deleteUser() method of the calling class 
-    (ExampleController).
+* The delete button that the getTable() method of DatatableController will create will have an 
+    anchor link pointing to '/deleteUser/6' where 6 is the record id against that specific delete 
+    button. The defined deleteUser route above will take the request to the deleteUser() method 
+    of the calling class (ExampleController).
 
 
 ## Customising the look of your table
@@ -242,5 +243,7 @@
      (in 'vendor/laravel-datatable/css/datatable.css') into your layout file like so:
 
     ```css
-        <link href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" rel="stylesheet">
+        <link 
+            href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" 
+            rel="stylesheet">
     ```
