@@ -19,7 +19,7 @@ class LaravelDatatableServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $namespace = "laravelDatatable";
+        $namespace = "laravel-datatable";
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadViewsFrom(__DIR__.'/../resources/views/', $namespace);
 

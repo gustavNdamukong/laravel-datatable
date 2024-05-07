@@ -16,4 +16,5 @@ return [
     'orderBy' => 'date',
     'sortOrder' => 'ASC',
     'clickableRecs' => true,
+    'date_field' => 'date'
 ];

@@ -1,11 +1,19 @@
 <?php
+
 namespace GustoCoder\LaravelDatatable\Http\Controllers;
+
 
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
 
+/**
+ * Class DatatableController
+ *
+ * @package Gustocoder\LaravelDatatable
+ * @author Gustav Ndamukong
+ */
 class DatatableController extends Controller
 {
     private $_model;
@@ -40,7 +48,12 @@ class DatatableController extends Controller
      *                  to use in their places instead. 
      * @param string $config array associative array of values to add to, or override the package config options.
      */
-    public function __construct($modelNameString, $dataRoute = '', $fields = [], $config = ['heading' => 'Test data table'])
+    public function __construct(
+        $modelNameString, 
+        $dataRoute = '', 
+        $fields = [], 
+        $config = ['heading' => 'Data table']
+    )
     {
         // Check if the provided model class name is valid
         if (!class_exists("App\Models\\".$modelNameString) || !is_subclass_of("App\Models\\".$modelNameString, Model::class)) {
@@ -60,11 +73,12 @@ class DatatableController extends Controller
             $this->_itemLinkRoute = strtolower($modelNameString);
         }
 
-        //merge package config into one
-        //TODO: remember that config(...) gets its value from your main app, not your package. 
-        //That's why you should have published your package config first (so LV copies your 
-        //package config to the main app) before the below code will work
         $this->_config = array_merge(config('laravel-datatable', []), $config);
+
+        if ($this->_config['heading'] == 'Data')
+        {
+            $this->_config['heading'] = ucfirst($modelNameString). ' data';
+        }
 
         [$orderBy, $sortOrder] = $this->getSortingData();
         $recordsPerpage = $this->_config['recordsPerpage'];
@@ -116,7 +130,7 @@ class DatatableController extends Controller
      *        $table = $pager->getTable('newsletter_TableView', ''); (leaving the 2nd argument meant for the sort links blank)
      *
      * @param string $tableTemplateClassName
-     * @param $sortLinkTarget string link destib=nation for the sort links on the table head
+     * @param $sortLinkTarget string link destination for the sort links on the table head
      * @return string containing the built HTML table
      *
      */
@@ -134,7 +148,7 @@ class DatatableController extends Controller
 
                 <div class='panel-body'>
                     <div class='table-responsive'>
-                        <table class='table'>
+                        <table class='table' id='".strtolower($this->_modelNameString)."_table'>
                             <thead>
                                 <tr>";
                                 foreach ($columns as $heading)
@@ -213,16 +227,17 @@ class DatatableController extends Controller
 
                                         foreach($dat->getAttributes() as $col => $val) 
                                         {
-                                            //we don't want to show 'id' fields if the user did not select them
-                                            //though we need that id field to handle clickable records
+                                            //only pull from the user-requested fields
                                             if (!in_array($col, $this->_requestedColumns))
                                             {
                                                 continue;
                                             }
 
-                                            //detect a date field
                                             if ($this->_config['clickableRecs']) {
-                                                if (strtolower($this->_config['date_field']) == strtolower($col))
+                                                if (
+                                                    (isset($this->_config['date_field'])) && 
+                                                    (strtolower($this->_config['date_field']) == strtolower($col))
+                                                )
                                                 {
                                                     $carbonDate = Carbon::createFromFormat('Y-m-d H:i:s', $val); 
                                                     $formattedDate = $carbonDate->format('d-m-Y');
@@ -246,19 +261,18 @@ class DatatableController extends Controller
                                             }
                                         }
 
-                                        //now for every iteration, loop though the extra columns and insert their values
+                                        //handle any extra columns
                                         if (!empty($this->_extraColumns)) {
                                             foreach ($this->_extraColumns as $head => $valuesArray) { 
-                                                //$valuesArray is a multidimensional array (which could be one of 'button', 'text'), so loop again
+                                                //$valuesArray is a multidimensional array (which could be either a 'button' or 'text'), so loop again
                                                 foreach ($valuesArray as $type => $vals) {
-                                                    //but because a 'button' type will contain a diff kinda sub-array from a 'text' type
-                                                    // we need to check what type it is before looping again, so we know how to loop over each sub-array
+                                                    //distinguish the type
                                                     if ($type == 'text') {
-                                                        //this is easy, text has only one item in its sub-array, n that's the value of the text
+                                                        //this is easy, text has only one item in its sub-array, & that's the value of the text
                                                         $HTMLTable .= "<td>" . $vals['value'] . "</td>";
                                                     }
                                                     if ($type == 'button') {
-                                                        //its a button, n buttons could have one, or two multidimensional arrays; 'edit', and, or 'delete' with each one having an array of three items
+                                                        //its a button, & buttons could have one, or two multidimensional arrays; 'edit', and, or 'delete' with each one having an array of three items
                                                         // so loop through the buttons
                                                         foreach ($vals as $buttonType => $attributes)
                                                         {
