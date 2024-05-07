@@ -181,7 +181,7 @@
         passed in like in the format: 'Modelname data'.
 
 
-# A word on the date_field config setting for the orderBy clause
+## A word on the date_field config setting for the orderBy clause
     -You must only use a datetime/timestamp type for this field, and not a 'date' format  
         because the package code expects a time segment in the date string given.
 
