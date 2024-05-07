@@ -2,7 +2,7 @@
 
 ## Instantly generate beautiful tables from your Laravel models
 
-![Example Users table](https://github.com/gustavNdamukong/laravel-datatable/blob/master/public/images/laravel-datatable.jpg?raw=true)
+![Example Users table](https://github.com/gustavNdamukong/laravel-datatable/blob/master/public/images/laravel-datatable.png?raw=true)
 
 ## How to use it
 
@@ -180,7 +180,13 @@
         Otherwise, the system is going to generate this heading for you using the model name you 
         passed in like in the format: 'Modelname data'.
 
-## How to handle actions on the manage buttons
+
+# A word on the date_field config setting for the orderBy clause
+    -You must only use a datetime/timestamp type for this field, and not a 'date' format  
+        because the package code expects a time segment in the date string given.
+
+
+## How to handle actions on the action (manage) buttons
     -When you indicate that you want the table records to be clickable (config file), the system 
      will create anchor links for the individual records and automatically send the record ids 
      with these links. All you then have to do create the routes to match those paths.
