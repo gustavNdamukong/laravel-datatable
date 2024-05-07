@@ -2,7 +2,7 @@
 
 ## Instantly generate a beautiful tables from your model data
 
-![Example Users table](https://github.com/gustavNdamukong/laravel-datatable/master/laravel-datatable.jpg?raw=true)
+![Example Users table](https://github.com/gustavNdamukong/laravel-datatable/blob/master/public/images/laravel-datatable.jpg?raw=true)
 
 ## How to use it
 
