@@ -86,16 +86,6 @@
                 ['id' => 'doSomethingBtn', 'class' => 'btn btn-primary btn-sm']
             );
 
-            /*override the panel id value-the current/default value is 'datatablePanel'. After 
-            setting the id, do not forget to edit your panel styling in 
-            public/vendor/laravel-datatable/css/datatable.css - go in there & edit the styling 
-            for 'datatablePanel'. The reason for allowing you to set an id attribute on the panel 
-            that wraps around the table is to allow you use CSS and, or JS to customise the look 
-            and behaviour of the table. If you do assign a panelId, do not forget to go into the 
-            CSS stylesheet in your public directory and change the panelId from the default one 
-            'datatablePanel' to the one you have added.*/
-
-            
             $panelId = 'usersPanel';
             $usersTable = $dataTableClass->getTable($panelId);
             return view('laravel-datatable::datatable-view', ['usersTable' => $usersTable]);
@@ -122,6 +112,17 @@
         }
     }
 ```
+    Override the panel id value-the current/default value is 'datatablePanel'. After 
+    setting the id, do not forget to edit your panel styling in 
+    public/vendor/laravel-datatable/css/datatable.css. Go in there & edit the styling 
+    for 'datatablePanel'. The reason for allowing you to set an id attribute on the panel 
+    that wraps around the table is to allow you use CSS to customise the look and behaviour 
+    of the table, and, or JS to manipulate the table dynamically. If you do assign a 
+    panelId, do not forget to go into the CSS stylesheet in your public directory and 
+    change the panelId from the default one 'datatablePanel' to the one you have added.
+
+    Do not forget to use the config file 'config/laravel-datatable.php' to enter base 
+    settings for your data table. See the 'Your datatable configurations' below.
 
     You would display the generated table ('usersTable') in your view blade file like so:
 
@@ -233,8 +234,219 @@
 * The delete button that the getTable() method of DatatableController will create will have an 
     anchor link pointing to '/deleteUser/6' where 6 is the record id against that specific delete 
     button. The defined deleteUser route above will take the request to the deleteUser() method 
-    of the calling class (ExampleController).
+    of the ExampleController class.
 
+
+# Generating a table from more than one model (powered by Eloquent joins)
+
+    This is also possible, but it has some limitations (see 'Limitation to joining models' below). 
+    Let us assume you want a table of records from two tables 'blog' and 'blog_comments', and you 
+    are going to link them based on a foreign key for example, where 
+    blog.id = blog_comments.blog_id. 
+
+    The steps are very similar except for one extra method that you need to call: 'setJoinData()'
+
+    Here is how you would do it. First of all, instantiate the DatatableController class exactly 
+    as you would when generating a table for a single model. Pass it the model name of the 
+    main (parent) table of the join relationship. A parent table is the table whose primary key 
+    is used as foreign keys in other (child) tables. In our case the main table would be 'blog'.
+    Also pass in the optional arguments like dataRoute, fields, config exactly as you would do
+    for a single model. 
+
+```php 
+    $dataTableClass = new DatatableController('Blog', 'blog-comments');
+```
+
+    Next, call the setJoinData() method and pass it three arrays eg: 
+
+```php 
+    ...
+    $dataTableClass->setJoinData(
+            ["'blog_comments', 'blog.id', '=', 'blog_comments.blog_id'"],
+            [
+                'blog.blog_id as post_id', 
+                'blog.blog_title', 
+                'blog.blog_article', 
+                'blog.blog_author as author', 
+                'blog_comments.blog_comments_comment as comment', 
+                'blog_comments.blog_comments_id as primary_key', 
+                'blog_comments.blog_comments_author as commentor'
+            ],
+            ["'blog_comments.blog_comments_status', 'valid'"]
+        );
+```
+    Once you have passed the main model you want to the constructor, eg:
+            
+        $dataTableClass = new DatatableController('Blog');
+            
+        You can now make a join on it like so:
+            -call the method $dataTableClass->setJoinData()
+                -pass it as first argument as an array of join strings where the 
+                    first element is the (child) table to join on the main table eg: 
+                    
+                    ["'blog_comments', 'blog.id', '=', 'blog_comments.blog_id'"];
+
+                    Here the 'blog_comments' table will be joined on the main 'blog' table
+                    on the condition that blog.id is equal to blog_comments.blog_id. 
+
+                -The optional second argument is a select string in case you only want 
+                    specific fields-leave it blank to select all fields from all tables joined. 
+                    Use aliases to avoid column name conflicts, or use a wildcard on a table 
+                    name eg 'tableName.*' to select all fields on that table eg:
+
+                    "'blog.id as post_id', 'blog.blog_title', 'blog.blog_article', 
+                    'blog.blog_author as author', 'blog_comments.blog_comments as comment', 
+                    'blog_comments.blog_comments_author as commentor'"
+
+                    Note that when it comes to joins like this, if you need the table records 
+                    to be clickable, when you call setJoinData(), you MUST create an alias
+                    of the primary key. Do it like so:
+
+                        'blog_comments.blog_comments_id as primary_key'
+
+                    This will tell the system what the unique key of the joined records are.
+
+                -The optional second argument is a where string which basically refers to a 
+                    where clause if there is any eg:
+
+                    "'blog_comments.blog_comments_status', 'valid'"
+
+    The rest is the steps are exactly the same as with generating a table for a single model:
+        -Optionally call the addColumn() and the addFieldButton() methods.
+        -Then finally genrate the table and render the table view file like so:
+
+        $panelId = 'blogPanel'; 
+        $blogCommentsTable = $dataTableClass->getTable($panelId);
+        return view('admin.contactMessages', ['contactMessagesTable' => $blogCommentsTable]);
+
+    Feel free to call $dataTableClass->setJoinData(...) multiple times to join more tables to 
+    the main table.
+
+## Here is an example of a model join
+
+```php 
+    <?php
+    
+    namespace App\Http\Controllers;
+
+    use Gustocoder\LaravelDatatable\Http\Controllers\DatatableController;
+    ...
+
+
+    class AdminController extends Controller
+    {
+        public function blogComments()
+        {
+            $dataTableClass = new DatatableController('Blog', 'blog-comments');
+            
+            $dataTableClass->setJoinData(
+                ["'blog_comments', 'blog.blog_id', '=', 'blog_comments_blog_id'"],
+                [
+                    'blog.blog_id as post_id', 
+                    'blog.blog_title', 
+                    'blog.blog_article', 
+                    'blog.blog_author as author', 
+                    'blog_comments.blog_comments_comment as comment',
+                    //Specify the joined record's primary key field as 'primary_key' 
+                    'blog_comments.blog_comments_id as primary_key', 
+                    'blog_comments.blog_comments_author as commentor'
+                ],
+                ["'blog_comments.blog_comments_status', 'valid'"]
+            );
+
+            //-------------------Add columns & buttons (optional)-----------------------
+            $deleteRoute = 'admin/blog-comments'; 
+            $editRoute = 'admin/edit-blog-comments';
+            $doSomethingRoute = 'admin/do-something-with-comments';
+
+            $dataTableClass->addColumn('Stuff');
+
+            //used to add field data to go under the column you added above. use this 
+            //for Edit, or Delete buttons.
+            $dataTableClass->addFieldButton(
+                'Stuff', 
+                'Delete', 
+                'x', 
+                $deleteRoute, 
+                ['id'], 
+                ['id' => 'deleteBlogCommentBtn', 'class' => 'btn btn-danger btn-sm']
+            );
+
+            $dataTableClass->addFieldButton(
+                'Stuff', 
+                'Edit', 
+                'Edit', 
+                $editRoute, 
+                ['id'], 
+                ['id' => 'editBlogCommentBtn', 'class' => 'btn btn-warning btn-sm']
+            );
+
+            $dataTableClass->addFieldButton(
+                'Stuff', 
+                'Sometype', 
+                'Something', 
+                $doSomethingRoute, 
+                ['id'], 
+                ['id' => 'doSomethingBtn', 'class' => 'btn btn-primary btn-sm']
+            );
+            //-------------------Add columns & buttons (optional)-------------------------
+
+            $panelId = 'blogPanel'; 
+            $blogCommentsTable = $dataTableClass->getTable($panelId);
+            return view(
+                'admin.contactMessages', 
+                ['contactMessagesTable' => $blogCommentsTable]
+            );
+        }
+    }
+```
+
+## Limitation to joining models
+    The only set back to joining models with this DatatableController class is that the 
+    generated table fields of the main table are going to be the only fields you can 
+    do sorting on. The fields from the joined (children) tables will only serve as
+    display data.
+
+## Your datatable configurations
+
+    Once you have run the command
+
+
+    The config file will be generated for you and placed in 
+
+        'config/laravel-datatable.php'
+
+    There are 4 fields that you should have separate entries per model for because 
+    they are unique to every model's records 
+    The config settings here must be prefixed with the model names in all lowercase. 
+        
+        '..._panelId'       => '',
+        '..._heading'       => '',
+        '..._date_field'    => '',
+        '..._orderBy'       => '',
+
+    These should be prefixed here with the model names-in all lowercase. Here is an
+    example entry for these fields for 'blog' and 'blog_comments' tables.
+
+```php
+    'blog_panelId'          => '',
+    'blog_heading'          => 'Blog',
+    'blog_comments_heading' => 'Blog comments',
+    'blog_date_field'       => 'blog_created',
+    'blog_orderBy'          => 'blog_created',
+    'blog_comments_orderBy' => 'blog_comments_created',
+```
+
+    There are four other fields that are generic and will apply to all your data 
+    tables, so you do not have to set them for every model.
+
+```php
+        'recordsPerpage'    => 5,
+        'sortable'          => true,
+        'sortOrder'         => 'ASC',
+        'clickableRecs'     => true,
+```
+    
 
 ## Customising the look of your table
 
@@ -251,11 +463,11 @@
 * So, remember to reference datatable stylesheet from the path where it lives 
      (in 'vendor/laravel-datatable/css/datatable.css') into your layout file like so:
 
-    ```css
-        <link 
-            href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" 
-            rel="stylesheet">
-    ```
+```css
+    <link 
+        href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" 
+        rel="stylesheet">
+```
 
 * Remember that to style the table, you need to edit the CSS file in 
     'public/vendor/laravel-datatable/css/datatable.css'
@@ -283,9 +495,9 @@
     in your
         /bootstrap/providers.php file like so:
 
-    ```php
-        return [
-            ...
-            Gustocoder\laravelDatatable\LaravelDatatableServiceProvider::class
-        ];
-    ```
+```php
+    return [
+        ...
+        Gustocoder\laravelDatatable\LaravelDatatableServiceProvider::class
+    ];
+```

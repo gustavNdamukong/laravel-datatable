@@ -1,11 +1,12 @@
 <?php
 
-namespace GustoCoder\LaravelDatatable\Http\Controllers;
-
+namespace Gustocoder\LaravelDatatable\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Gustocoder\LaravelDatatable\Exceptions\RedirectException;
+use Illuminate\Support\Facades\Route;
 
 
 /**
@@ -23,25 +24,15 @@ class DatatableController extends Controller
     private $_total;
     private $_itemLinkRoute;
 
-    //adding extra columns & fields on the fly
-    //The options are: 'value', 'link', 'params' (optional array of the link query string params), 
-    //and 'attributes' (to be used in styling the table-optional array)
     private $_extraFieldParameters = []; 
     private $_extraColumns = [];
     private $_config = [];
-
+    private $_joinRealFields = [];
 
 
     /**
-     * DGZ_Table constructor. Pass it a second parameter which should be the count of the data to be displayed; remember to filter the real count if you have any applicable filters,
-     * otherwise the $count will be the total number of records displayed and reflect the number of page links shown in the pagination links, which may not be accurate.
-     *
-     * For the sorting feature to work, you must send the ordering to the DB query so that the data returns ordered as desired before passing it to DGZ_Table e.g
-     *      $letters = $newsletter->selectOnly($columns, null, $order, $sort);
-     * $pager = new DGZ_Table($letters);
-     *
      * @param $modelNameString the name of the model we need data from
-     * @param int $dataRoute the route for creating the link to individual items in case the table records are made clickable 
+     * @param string $dataRoute the route for creating the link to individual items in case the table records are made clickable 
      * @param string $fields an array of fields to select in case you do not want all the fields in the DB in your table.
      *                  Note that you can pass in a numerically-indexed array for the exact field names, of an associative
      *                  array where the keys are the exact table column names while their values are aliases you would like 
@@ -75,12 +66,13 @@ class DatatableController extends Controller
 
         $this->_config = array_merge(config('laravel-datatable', []), $config);
 
-        if ($this->_config['heading'] == 'Data')
+        if ($this->_config[strtolower($modelNameString).'_heading'] == 'Data')
         {
-            $this->_config['heading'] = ucfirst($modelNameString). ' data';
+            $this->_config[strtolower($modelNameString).'_heading'] = ucfirst($modelNameString). ' data';
         }
 
         [$orderBy, $sortOrder] = $this->getSortingData();
+
         $recordsPerpage = $this->_config['recordsPerpage'];
 
         if ($fields)
@@ -99,43 +91,124 @@ class DatatableController extends Controller
         }
         else
         {
-            $this->_data = $this->_model::orderBy($orderBy, $sortOrder)->paginate($recordsPerpage);  
-            $this->storeColumns();
+            $this->_data = $this->_model::orderBy($orderBy, $sortOrder)->paginate($recordsPerpage); 
+            
+            if ($this->_data->first() != null)
+            { 
+                $this->storeColumns(); 
+            } 
         }
-        
         $this->_total = $this->_data->total();
     }
 
 
+    /**
+     * @var $joinStrings array of strings each containing the table to join the main table on, & how to link the two
+     * @var $selectString array of the fields to select-leave blank to select all fields of all joined tables
+     * @var $whereString array for the where clause qualifiers as separate strings. There can be multiple where qualifiers, hence the array
+     */
+    public function setJoinData($joinStrings, $selectString = [], $whereString = [])
+    { 
+        $recordsPerpage = $this->_config['recordsPerpage'];
+
+        $query = $this->_model::query();
+
+        // Apply the joins to the query
+        $query = $this->applyJoins($query, $joinStrings);
+
+        // Add any other query constraints, e.g., where, orderBy, etc.
+        if ($selectString)
+        {
+            //set real fields from aliases
+            $fields = [];
+            foreach ($selectString as $string)
+            {
+                if (preg_match('/as/', $string))
+                {
+                    $realField = explode('as', $string);
+                    $this->_joinRealFields[$realField[1]] = $realField[0];
+                }
+            }
+
+            $query->select($selectString);
+        }
+        if ($whereString)
+        {
+            foreach ($whereString as $where)
+            {
+                $whereComponents = explode(', ', $where);
+                $column = trim($whereComponents[0], "'");
+                $value = trim($whereComponents[1], "'");
+                $query->where($column, $value);
+            }
+        }
+
+        [$orderBy, $sortOrder] = $this->getSortingData();
+        
+        $query->orderBy($orderBy, $sortOrder);
+
+        $this->_data = $query->paginate($recordsPerpage);
+        $this->_total = $this->_data->total(); 
+
+        $this->adjustCurrentPage();
+        $this->storeColumns();
+    }
+
+
+    public function applyJoins(&$query, array $joins)
+    {
+        foreach ($joins as $join) {
+            // Split the join string into its components
+            $joinComponents = explode(', ', $join);
+            
+            // Trim the components to remove any extra spaces or quotes
+            $table = trim($joinComponents[0], "'");
+            $first = trim($joinComponents[1], "'");
+            $operator = trim($joinComponents[2], "'");
+            $second = trim($joinComponents[3], "'");
+            
+            // Apply the join to the query
+            $query = $query->join($table, $first, $operator, $second);
+        }
+        return $query;
+    }
 
 
     public function getSortingData()
     {
-        $orderBy = (isset($_GET['ord']) ? $_GET['ord'] : $this->_config['orderBy']);
-        $sortOrder = (isset($_GET['s']) ? $_GET['s'] : $this->_config['sortOrder']);
+        $orderBy = (isset($_GET['ord']) ? $this->getRealFieldName($_GET['ord']) : $this->_config[strtolower($this->_modelNameString).'_orderBy']); 
+        $sortOrder = (isset($_GET['s']) ? $this->getRealFieldName($_GET['s']) : $this->_config['sortOrder']);
         return [$orderBy, $sortOrder];
+    }
+
+    public function getRealFieldName($fieldName)
+    {
+        $trimmedArray = [];
+        foreach ($this->_joinRealFields as $key => $value) {
+            $trimmedKey = trim($key);
+            $trimmedArray[$trimmedKey] = $value;
+        }
+        $this->_joinRealFields = $trimmedArray;
+
+        if (isset($this->_joinRealFields[$fieldName]))
+        {
+            return $this->_joinRealFields[$fieldName];
+        }
+        else 
+        {
+            return $fieldName;
+        }
     }
 
 
 
     /**
-     * Call this pager class's constructor first passing it your data before calling this method to get the table output
-     *
-     * The $sortLinkTarget specifies the target back link for the sort links which will be passed to getTable() - do this obviously only
-     * 		if you have set 'makeSortable()' to true
-     *      Note very carefully that if you have specified '$pager->makeSortable' as true and set the $sortLinkTarget
-     * 		variable, then in order for your links and pagination functionality to work well, you MUST call getTable() like so:
-     *        $table = $pager->getTable('blog_posts_TableView', $sortLinkTarget);
-     *          else you MUST call it like so:
-     *        $table = $pager->getTable('newsletter_TableView', ''); (leaving the 2nd argument meant for the sort links blank)
-     *
-     * @param string $tableTemplateClassName
-     * @param $sortLinkTarget string link destination for the sort links on the table head
+     * @param string $panelId to be used as the id attribute of the panel your table will be wrapped in
      * @return string containing the built HTML table
-     *
      */
     public function getTable($panelId = '')
     {
+        $this->adjustCurrentPage();
         $columns = $this->getColumns();
 
         //now build the HTML table                    
@@ -143,7 +216,7 @@ class DatatableController extends Controller
             "<div ".($panelId != ''? "id='$panelId'":"id='datatablePanel'")." 
                 class='panel panel-primary'>
                 <div class='panel-heading'>
-                    <h2 class='panel-title'>".$this->_config['heading']."</h2>
+                    <h2 class='panel-title'>".$this->_config[strtolower($this->_modelNameString).'_heading']."</h2>
                 </div>
 
                 <div class='panel-body'>
@@ -156,6 +229,12 @@ class DatatableController extends Controller
                                     //if a heading is not amongs the requested columns, dont display it
                                     if (!in_array($heading, $this->_requestedColumns))
                                     {
+                                        continue;
+                                    }
+
+                                    //do not create primary_key column 
+                                    if ($heading == 'primary_key')
+                                    { 
                                         continue;
                                     }
 
@@ -191,7 +270,7 @@ class DatatableController extends Controller
                                     {
                                         //we need to know if the values of this field will be buttons, n if so, how many btns there are, so we can make the header wide enough to contain the columns
                                         //we are of course assuming below that there will not be more than two btns provided for one column, if u decide to accept more in your app, simply come here
-                                        //n add more conditionals like: if ($btnCount == 2) { etc
+                                        //& add more conditionals like: if ($btnCount == 2) { etc
 
                                         //we know there're only two types of buttons handled; 'text' & 'button', so let's get the count of total columns added on the fly
                                         $extraColumnsCount = 0;
@@ -222,21 +301,32 @@ class DatatableController extends Controller
                                 {
                                     foreach ($this->_data as $ref => $dat)
                                     {
-                                        $recId = $dat->getKey();
+                                        $recId = $dat->getKey(); 
+                                        if (isset($dat->getAttributes()['primary_key']))
+                                        {                                       
+                                            $recId = $dat->getAttributes()['primary_key'];
+                                        }
+
                                         $HTMLTable .= "<tr>";
 
                                         foreach($dat->getAttributes() as $col => $val) 
-                                        {
+                                        { 
                                             //only pull from the user-requested fields
                                             if (!in_array($col, $this->_requestedColumns))
                                             {
                                                 continue;
                                             }
 
+                                            //do not create primary_key field
+                                            if ($col == 'primary_key')
+                                            {
+                                                continue;
+                                            }
+
                                             if ($this->_config['clickableRecs']) {
                                                 if (
-                                                    (isset($this->_config['date_field'])) && 
-                                                    (strtolower($this->_config['date_field']) == strtolower($col))
+                                                    (isset($this->_config[strtolower($this->_modelNameString).'_date_field'])) && 
+                                                    (strtolower($this->_config[strtolower($this->_modelNameString).'_date_field']) == strtolower($col))
                                                 )
                                                 {
                                                     $carbonDate = Carbon::createFromFormat('Y-m-d H:i:s', $val); 
@@ -249,7 +339,7 @@ class DatatableController extends Controller
                                             }
                                             else
                                             {
-                                                if (strtolower($this->_config['date_field']) == strtolower($col))
+                                                if (strtolower($this->_config[strtolower($this->_modelNameString).'_date_field']) == strtolower($col))
                                                 {
                                                     $carbonDate = Carbon::createFromFormat('Y-m-d H:i:s', $val);
                                                     $formattedDate = $carbonDate->format('d-m-Y');
@@ -286,7 +376,7 @@ class DatatableController extends Controller
                                                                 //check if params has an 'id' element, coz this must be added to the link differently
                                                                 if (in_array('id', $attributes['params']))
                                                                 {
-                                                                    $link .= '/'.$dat['id'];
+                                                                    $link .= '/'.$recId; 
                                                                     //now get rid of the id from params
                                                                     $idIndex = array_search('id', $attributes['params']);
                                                                     unset($attributes['params'][$idIndex]);
@@ -376,6 +466,24 @@ class DatatableController extends Controller
     }
 
 
+    public function adjustCurrentPage()
+    {
+        if ($this->_data->first() == null)
+        { 
+            $currentPage = request()->query('page', 1);
+            
+            // Count page records
+            $totalRecs = $this->_data->count();
+            $configRecsPerpage = $this->_config['recordsPerpage'];
+
+            //if configRecsPerpage is more than totalRecs (which is per page), redirect one page backwards
+            if ($configRecsPerpage > $totalRecs) { 
+                $newPage = ($currentPage - 1);
+                $currentRoute = Route::currentRouteName();
+                throw new RedirectException(route($currentRoute, ['page' => $newPage])); 
+            } 
+        }
+    }
 
 
     public function getFieldList($fields)
@@ -416,12 +524,10 @@ class DatatableController extends Controller
 
 
 
-
     function isAssociativeArray($array) {
         // Check if any keys are non-sequential
         return count(array_filter(array_keys($array), 'is_string')) > 0;
     }
-
 
 
     public function storeColumns()
@@ -449,16 +555,11 @@ class DatatableController extends Controller
 
 
     /**
-     * This is a method for dynamically adding extra columns on the fly to the paginated table to be created by this Pager class. Pass it the text for its heading.
+     * Dynamically add extra columns on the fly to the paginated table to be created. Pass it the text for its heading.
      *
-     *You need to call this method before finally calling the getTable() method, as this method will have prepared the array that getTable() will use to build final table output.
-     * The two parameters you pass to this method are assigned to the $_extraColumns array just as they are, with the first parameter as the key, and the second parameter as its sub array
-     *
-     * @param $heading
-     * @param array $value contains a multidimensional array with a key of 'text', or 'button'
-     *  if it is 'text', then this array will hold just on sub array where the value is the value of the text
-     *  if is is a button, this array will have 3 sub arrays i) the value (text) of the button ii) the link target, and iii) an array of parameters to pass at the end of the link
-     *
+     * This method must be called before calling getTable(), as it prepares the array that getTable() will use to 
+     *  build final table output
+     * @param string $heading added to the $_extraColumns array
      *@return void;
      */
     public function addColumn($heading)
@@ -472,20 +573,30 @@ class DatatableController extends Controller
 
 
     /**
+     * This is for adding new columns to your table on the fly. It handles columns containing buttons.
+     * It pushes its value into the _extraFieldParameters array.
      * Call this method if the extra column field you are adding will contain a button.
-     *  This method builds up the _extraFieldParameters array property so that we properly deals with cases where buttons, or text column fields are being created
+     *
      *  For buttons, it builds up 3 sub arrays
-     *      i) the value (text) of the button
-     *      ii) the link target, and
-     *      iii) an array of parameters to pass at the end of the link
+     *      i) it specifies that the extra field it is adding to the table is a button eg: 
+     *          $this->_extraFieldParameters['button']
+     *      ii) It then specifies the button type. There are two options you can pass in, 'Edit' or 'Delete'.
+     *      iii) Regardless of the button type, it builds four aspects that all buttons need: 
+     *          -the link text value
+     *          -the actual href URL string to be injected into the button
+     *          -any parameters to append to the href value as browser query strings
+     *          -any attributes to add to the button element it creates.
      *
-     * @param $heading string this should match the text you gave to the heading when you first created the new column using addColumn()
-     *          the system will then know which heading to place this under
-     * @param $buttonType string the type of button you want to create. We currently handle two button types; 'Edit', and 'Delete' buttons
+     * @param $heading string this should match the text you gave to the heading when you first created the 
+     *  new column using addColumn() eg 'Action'. That is how the system will know which column to place the 
+     *  $heading value under.
+     * @param $buttonType string the type of button you want to create. We currently handle two button types; 
+     *  'Edit', and 'Delete'.
      * @param $value string the text to go on the button
-     * @param $link string the link where these buttons will take the user to e.g. 'index.phtml?page=blogController&action=editPost'
-     * @param array $params array of strings of parameters to stick after the link as a query string. Note that these should match the names of DB table fields where the data is coming from e.g. ['blog_id']
-     *
+     * @param $link string the link where these buttons will take the user to. This will point to one of your routes.
+     * @param array $params array of strings of parameters to stick after the link as a query string. 
+     * @param array $attributes attributes to pass to the generated button eg 'id', or 'class' etc. This will be 
+     *  handy for styling the button or using Javascript to handle the click event on the button.
      * @return void
      */
     public function addFieldButton($heading, $buttonType, $value, $link, $params = [], $attributes = [])
@@ -502,13 +613,22 @@ class DatatableController extends Controller
 
 
     /**
-     * This is the equivalent of the addFieldButton method because it also builds up the _extraFieldParameters array property so that we properly deal with cases where buttons,
-     * or text column fields are being created. It handles placing of text in the extra column field, and not a button, therefore it is thus much simpler.
-     *
-     * Unlike the case of buttons where we build 3 sub arrays, this array will hold only one sub array where the value is the value of the text
-     *
-     * @param $heading string this should match the text you gave to the heading when you first created the new column using addColumn()
-     *          the system will then know which heading to place this under
+     * Similar to addFieldButton(), this is for adding new columns to your table on the fly. It handles text columns.
+     * It pushes its value into the _extraFieldParameters array. 
+     * Call this method if the extra column field you are adding will contain some text instead of a button
+     * It handles placing of text in the extra column field, and not a button, therefore it is thus much simpler
+     * than addFieldButton(). It appends only one sub array to the _extraFieldParameters array, 'text', where the value 
+     * key is the value of the text.
+     * 
+     * It builds up a simple array
+     *      i) it specifies that the extra field it is adding to the table is 'text' eg: 
+     *          $this->_extraFieldParameters['text']
+     *      ii) It the specifies the value of the text ass passed in by you in $value eg:
+     *          $this->_extraFieldParameters['text']['value'] = $value;
+     * 
+     * @param $heading string this should match the text you gave to the heading when you first created the 
+     *  new column using addColumn() eg 'Action'. That is how the system will know which column to place the 
+     *  $heading value under.
      * @param $value string to go in the field
      *
      * @return void

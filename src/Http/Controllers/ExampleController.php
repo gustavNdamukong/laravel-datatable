@@ -1,6 +1,6 @@
 <?php
 
-namespace GustoCoder\LaravelDatatable\Http\Controllers;
+namespace Gustocoder\LaravelDatatable\Http\Controllers;
 
 
 use App\Http\Controllers\Controller;
@@ -88,7 +88,7 @@ class ExampleController extends Controller
          */
         $dataTableClass = new DatatableController(
             'User', 
-            'users', 
+            'users',
             [], 
             ['date_field' => 'created_at', 'orderBy' => 'created_at']
         );
@@ -125,7 +125,7 @@ class ExampleController extends Controller
         //     <link href="{{ asset('vendor/laravel-datatable/css/datatable.css') }}" rel="stylesheet">    
         $panelId = 'usersPanel';
         $usersTable = $dataTableClass->getTable($panelId);
-        return view('laravel-datatable::datatable-view', ['usersTable' => $usersTable]);
+        return view('laravel-datatable::users', ['usersTable' => $usersTable]);
     }
 
 

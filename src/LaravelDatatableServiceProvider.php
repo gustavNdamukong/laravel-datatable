@@ -11,7 +11,10 @@ class LaravelDatatableServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            \Illuminate\Contracts\Debug\ExceptionHandler::class,
+            \Gustocoder\LaravelDatatable\Exceptions\Handler::class
+        );
     }
 
     /**
