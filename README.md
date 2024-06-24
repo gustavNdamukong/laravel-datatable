@@ -236,6 +236,8 @@
     button. The defined deleteUser route above will take the request to the deleteUser() method 
     of the ExampleController class.
 
+* Make sure you have named routes for all your routes as the system uses that.
+
 
 # Generating a table from more than one model (powered by Eloquent joins)
 
