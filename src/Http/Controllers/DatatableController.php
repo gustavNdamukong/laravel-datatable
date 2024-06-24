@@ -471,17 +471,16 @@ class DatatableController extends Controller
         if ($this->_data->first() == null)
         { 
             $currentPage = request()->query('page', 1);
-            
-            // Count page records
-            $totalRecs = $this->_data->count();
-            $configRecsPerpage = $this->_config['recordsPerpage'];
+            $maxRecordsPerPage = $this->_config['recordsPerpage'];
+            $totalRecords = $this->_data->count();
+            $totalPages = ceil($totalRecords / $maxRecordsPerPage);
+            $newPage = max(1, $currentPage - 1); // Ensure we do not go below page 1
 
-            //if configRecsPerpage is more than totalRecs (which is per page), redirect one page backwards
-            if ($configRecsPerpage > $totalRecs) { 
-                $newPage = ($currentPage - 1);
+            if ($currentPage > $totalPages && $currentPage > 1) {
+                // Redirect one page back
                 $currentRoute = Route::currentRouteName();
-                throw new RedirectException(route($currentRoute, ['page' => $newPage])); 
-            } 
+                throw new RedirectException(route($currentRoute, ['page' => $newPage]));
+            }
         }
     }
 
